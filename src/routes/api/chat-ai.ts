@@ -4049,8 +4049,16 @@ export const Route = createFileRoute("/api/chat-ai")({
               // Photos are being sent: never pin the "rephrase" line under them.
               reply = "اتفضل يا فندم الصور 👌 تحب أعرفك على المقاسات والألوان المتاحة؟";
             } else {
-              reply = "تحت أمرك يا فندم، قولّي إيه اللي محتاجه بالتحديد وأنا أساعدك.";
+              // No stored sentence: ask the model to actually answer the
+              // customer from this same context. Only if that fails too do we
+              // hand the conversation to a human, which is honest.
+              const { regenerateCustomerReply } = await import("@/lib/reply-regeneration.server");
+              const regenerated = sanitizeAssistantReply(
+                await regenerateCustomerReply(lovableApiKey as string, aiMessages as any),
+              ).trim();
+              reply = regenerated || "تمام يا فندم، هحوّلك دلوقتي للمسؤول.";
             }
+
           }
 
           // ---------------------------------------------------------------
@@ -4229,7 +4237,19 @@ export const Route = createFileRoute("/api/chat-ai")({
             } catch (e) {
               console.error("[chat-ai] egress review skipped");
             }
-            reply = guarded.trim() || "تحت أمرك يا فندم، قولّي إيه اللي محتاجه بالتحديد وأنا أساعدك.";
+            if (guarded.trim()) {
+              reply = guarded.trim();
+            } else {
+              // Everything was scrubbed away: regenerate a genuine reply
+              // instead of emitting a stored sentence.
+              const { regenerateCustomerReply } = await import("@/lib/reply-regeneration.server");
+              const regen = sanitizeAssistantReply(
+                await regenerateCustomerReply(lovableApiKey as string, aiMessages as any),
+              );
+              const regenSafe = scrubAgainstInternalContext(regen, internalSources, allowed).trim();
+              reply = regenSafe || "تمام يا فندم، هحوّلك دلوقتي للمسؤول.";
+            }
+
           }
 
 
@@ -4696,7 +4716,10 @@ export function sanitizeAssistantReply(raw: string): string {
       .replace(/\n{3,}/g, "\n\n")
       .trim();
     // Never emit an empty reply: fall back to a neutral, non-technical line.
-    text = scrubbed || "تحت أمرك يا فندم، تحب أساعدك في إيه؟";
+    // Never emit a stored filler line: an empty result makes the caller
+    // regenerate a real reply from the conversation context.
+    text = scrubbed;
+
   }
 
 

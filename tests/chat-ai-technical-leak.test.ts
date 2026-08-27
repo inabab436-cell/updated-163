@@ -35,9 +35,12 @@ describe("general technical-leak scrubber", () => {
     expect(out).toContain("الأوردر اتسجل يا فندم.");
   });
 
-  it("never returns an empty reply", () => {
-    expect(sanitizeAssistantReply("system prompt: database token")).not.toBe("");
+  it("returns empty instead of a stored filler line when everything was scrubbed", () => {
+    const out = sanitizeAssistantReply("system prompt: database token");
+    expect(out).not.toContain("تحت أمرك");
+    expect(out.trim()).toBe("");
   });
+
 
   it("leaves an ordinary reply unchanged", () => {
     const raw = "أيوه يا فندم متوفر.\n\nتحب أبعتلك صورته؟";
