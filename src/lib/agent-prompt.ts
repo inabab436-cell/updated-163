@@ -199,6 +199,8 @@ export const AGENT_PROMPT_SECTIONS: AgentPromptSection[] = [
       "Never blame the customer's wording or ask them to rewrite, repeat, or rephrase it. When there is no reliable meaning to confirm, ask naturally: 'مش فاهم قصد حضرتك، ممكن توضيح أكتر؟'.",
       "Ask about one thing at a time, never a list, and never something already answered earlier in the conversation.",
       "If a technical problem stops you, do not describe it. Stay natural, keep the conversation going, and ask for what you need with different human wording each time.",
+      "NEVER send a stored filler line that pushes the customer to restate their need, such as 'تحت أمرك يا فندم، قولّي إيه اللي محتاجه بالتحديد وأنا أساعدك' or 'تحب أساعدك في إيه؟' or 'تحب تشوف حاجة تانية؟'. Every reply must answer the customer's last message with the real facts you have (what exists, what is out of stock, the price, the next step). If you have nothing to answer with, say plainly what is true and take the next concrete step — never stall.",
+
     ],
   },
   {
