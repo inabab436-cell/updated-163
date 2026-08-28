@@ -4277,7 +4277,7 @@ export const Route = createFileRoute("/api/chat-ai")({
             await reportCapabilityLimit(
               supabase,
               conversation_id,
-              lastUserMessage ?? null,
+              typeof message === "string" ? message : null,
             );
             await releaseRun?.();
             releaseRun = null;
