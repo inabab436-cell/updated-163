@@ -3659,6 +3659,10 @@ export const Route = createFileRoute("/api/chat-ai")({
           // silent model can never fall back to a generic invented sentence.
           let orderConfirmationMessage: string | null = null;
           let needsHumanNow = false;
+          // Narrow case only: the agent could not produce any reply because the
+          // request is technically impossible for it. Customer sees nothing,
+          // the conversation is closed and the merchant is notified.
+          let capabilityBlocked = false;
           let handoffReason: string | null = null;
           let missingInfoRecorded = false;
           // A failed order is explained by the model from the tool result's own
@@ -4050,13 +4054,19 @@ export const Route = createFileRoute("/api/chat-ai")({
               reply = "اتفضل يا فندم الصور 👌 تحب أعرفك على المقاسات والألوان المتاحة؟";
             } else {
               // No stored sentence: ask the model to actually answer the
-              // customer from this same context. Only if that fails too do we
-              // hand the conversation to a human, which is honest.
+              // customer from this same context. If even that produces nothing,
+              // the request is beyond what the agent can technically do: no
+              // sentence is sent, the merchant is notified instead.
               const { regenerateCustomerReply } = await import("@/lib/reply-regeneration.server");
               const regenerated = sanitizeAssistantReply(
                 await regenerateCustomerReply(lovableApiKey as string, aiMessages as any),
               ).trim();
-              reply = regenerated || "تمام يا فندم، هحوّلك دلوقتي للمسؤول.";
+              if (regenerated) {
+                reply = regenerated;
+              } else {
+                reply = "";
+                capabilityBlocked = true;
+              }
             }
 
           }
@@ -4247,13 +4257,41 @@ export const Route = createFileRoute("/api/chat-ai")({
                 await regenerateCustomerReply(lovableApiKey as string, aiMessages as any),
               );
               const regenSafe = scrubAgainstInternalContext(regen, internalSources, allowed).trim();
-              reply = regenSafe || "تمام يا فندم، هحوّلك دلوقتي للمسؤول.";
+              if (regenSafe) {
+                reply = regenSafe;
+              } else {
+                reply = "";
+                capabilityBlocked = true;
+              }
             }
 
           }
 
+          // TECHNICALLY IMPOSSIBLE REQUEST — this case only.
+          // Nothing is said to the customer, the conversation is closed and the
+          // merchant gets a notification to take over.
+          if (capabilityBlocked && !reply.trim()) {
+            const { reportCapabilityLimit } = await import(
+              "@/lib/agent-capability-limit.server"
+            );
+            await reportCapabilityLimit(
+              supabase,
+              conversation_id,
+              typeof message === "string" ? message : null,
+            );
+            await releaseRun?.();
+            releaseRun = null;
+            return respond({
+              conversation_id,
+              reply: "",
+              order_number: createdOrderNumber,
+              needs_human: true,
+              messages: await loadMessages(conversation_id),
+            });
+          }
 
           const { data: insertedAssistant, error: aiInsertErr } = await supabase
+
 
             .from("messages")
             .insert({
