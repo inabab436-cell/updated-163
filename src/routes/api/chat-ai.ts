@@ -4257,7 +4257,12 @@ export const Route = createFileRoute("/api/chat-ai")({
                 await regenerateCustomerReply(lovableApiKey as string, aiMessages as any),
               );
               const regenSafe = scrubAgainstInternalContext(regen, internalSources, allowed).trim();
-              reply = regenSafe || "تمام يا فندم، هحوّلك دلوقتي للمسؤول.";
+              if (regenSafe) {
+                reply = regenSafe;
+              } else {
+                reply = "";
+                capabilityBlocked = true;
+              }
             }
 
           }
