@@ -4054,13 +4054,19 @@ export const Route = createFileRoute("/api/chat-ai")({
               reply = "اتفضل يا فندم الصور 👌 تحب أعرفك على المقاسات والألوان المتاحة؟";
             } else {
               // No stored sentence: ask the model to actually answer the
-              // customer from this same context. Only if that fails too do we
-              // hand the conversation to a human, which is honest.
+              // customer from this same context. If even that produces nothing,
+              // the request is beyond what the agent can technically do: no
+              // sentence is sent, the merchant is notified instead.
               const { regenerateCustomerReply } = await import("@/lib/reply-regeneration.server");
               const regenerated = sanitizeAssistantReply(
                 await regenerateCustomerReply(lovableApiKey as string, aiMessages as any),
               ).trim();
-              reply = regenerated || "تمام يا فندم، هحوّلك دلوقتي للمسؤول.";
+              if (regenerated) {
+                reply = regenerated;
+              } else {
+                reply = "";
+                capabilityBlocked = true;
+              }
             }
 
           }
