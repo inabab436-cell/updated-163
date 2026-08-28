@@ -3659,6 +3659,10 @@ export const Route = createFileRoute("/api/chat-ai")({
           // silent model can never fall back to a generic invented sentence.
           let orderConfirmationMessage: string | null = null;
           let needsHumanNow = false;
+          // Narrow case only: the agent could not produce any reply because the
+          // request is technically impossible for it. Customer sees nothing,
+          // the conversation is closed and the merchant is notified.
+          let capabilityBlocked = false;
           let handoffReason: string | null = null;
           let missingInfoRecorded = false;
           // A failed order is explained by the model from the tool result's own
