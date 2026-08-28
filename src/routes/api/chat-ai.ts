@@ -4267,8 +4267,31 @@ export const Route = createFileRoute("/api/chat-ai")({
 
           }
 
+          // TECHNICALLY IMPOSSIBLE REQUEST — this case only.
+          // Nothing is said to the customer, the conversation is closed and the
+          // merchant gets a notification to take over.
+          if (capabilityBlocked && !reply.trim()) {
+            const { reportCapabilityLimit } = await import(
+              "@/lib/agent-capability-limit.server"
+            );
+            await reportCapabilityLimit(
+              supabase,
+              conversation_id,
+              lastUserMessage ?? null,
+            );
+            await releaseRun?.();
+            releaseRun = null;
+            return respond({
+              conversation_id,
+              reply: "",
+              order_number: createdOrderNumber,
+              needs_human: true,
+              messages: await loadMessages(conversation_id),
+            });
+          }
 
           const { data: insertedAssistant, error: aiInsertErr } = await supabase
+
 
             .from("messages")
             .insert({
