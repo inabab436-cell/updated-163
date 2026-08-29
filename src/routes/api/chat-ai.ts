@@ -4247,9 +4247,22 @@ export const Route = createFileRoute("/api/chat-ai")({
             } catch (e) {
               console.error("[chat-ai] egress review skipped");
             }
+            // 4. Availability gate on OFFERS: never invite the customer to
+            //    consider models/colours/sizes that do not exist right now.
+            try {
+              const { stripUnavailableOffers } = await import("@/lib/alternatives-offer-guard");
+              const { computeSuggestableOptions } = await import("@/lib/suggestable-options");
+              guarded = stripUnavailableOffers(
+                guarded,
+                computeSuggestableOptions(merchantData.products as any, matchedProductId),
+              );
+            } catch (e) {
+              console.error("[chat-ai] offer guard skipped");
+            }
             if (guarded.trim()) {
               reply = guarded.trim();
             } else {
+
               // Everything was scrubbed away: regenerate a genuine reply
               // instead of emitting a stored sentence.
               const { regenerateCustomerReply } = await import("@/lib/reply-regeneration.server");
