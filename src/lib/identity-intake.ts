@@ -140,7 +140,7 @@ export function checkIdentityIntake(candidates: IdentityCandidates): IdentityIss
   const issues: IdentityIssue[] = [];
 
   const name = String(candidates.name ?? "").trim();
-  if (name) {
+  if (name && candidates.orderInProgress) {
     const check = validateCustomerName(name);
     if (!check.ok) {
       issues.push({ field: "name", reason: check.reason ?? "invalid", ask: nameAsk(check.reason ?? "") });
