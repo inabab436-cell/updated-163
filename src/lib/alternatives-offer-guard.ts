@@ -16,6 +16,8 @@ export interface OfferPermissions {
   canOfferOtherModels: boolean;
   canOfferOtherColors: boolean;
   canOfferOtherSizes: boolean;
+  /** At least one product in the catalogue has real stock right now. */
+  hasAnythingInStock?: boolean;
 }
 
 /** "another / other / different" in Egyptian Arabic + English. */
