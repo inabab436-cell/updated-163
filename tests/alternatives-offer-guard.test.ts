@@ -45,3 +45,36 @@ describe("alternatives offer guard", () => {
     expect(src).toContain("computeSuggestableOptions");
   });
 });
+
+import { stripEscalationPromises } from "@/lib/alternatives-offer-guard";
+
+describe("empty-catalogue offers and escalation promises", () => {
+  it("removes an invitation to browse when nothing is in stock", () => {
+    expect(
+      stripUnavailableOffers("ممكن أوريك المتاح حالياً؟", { ...none, hasAnythingInStock: false }),
+    ).toBe("");
+  });
+
+  it("keeps it when something is in stock", () => {
+    const t = "ممكن أوريك المتاح حالياً؟";
+    expect(stripUnavailableOffers(t, { ...none, hasAnythingInStock: true })).toBe(t);
+  });
+
+  it("removes hand-over and follow-up promises", () => {
+    expect(
+      stripEscalationPromises("إحنا بنأكد الموضوع ده وهنرجع لحضرتك قريب."),
+    ).toBe("");
+    expect(stripEscalationPromises("هحولك للمسؤول.")).toBe("");
+  });
+
+  it("keeps plain factual sentences", () => {
+    const t = "أنا ماقدرش أغير سعر المنتج، الأسعار ثابتة.";
+    expect(stripEscalationPromises(t)).toBe(t);
+  });
+
+  it("is wired into the chat egress chokepoint", () => {
+    const src = readFileSync("src/routes/api/chat-ai.ts", "utf8");
+    expect(src).toContain("stripEscalationPromises");
+    expect(src).toContain("hasAnythingInStock");
+  });
+});
