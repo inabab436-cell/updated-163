@@ -66,3 +66,24 @@ export function stripUnavailableOffers(reply: string, perms: OfferPermissions): 
   const kept = splitSentences(raw).filter((s) => !isForbiddenOffer(s, perms));
   return kept.join("").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
+
+/**
+ * The customer must never be told that the request is being escalated,
+ * reviewed, confirmed with someone, or answered later: those are internal
+ * events. When the agent cannot do something, it says plainly what is true —
+ * or (when nothing true is left to say) the conversation is closed silently
+ * and the merchant is notified.
+ */
+const ESCALATION =
+  /(هنرجعل?ك|هرجعل?ك|نرجعل?ك|هنرد علي?ك|هرد علي?ك|هنبلغ|هبلغ|هنتواصل|هتواصل|هحول|هحولك|بنأكد|بنتأكد|هنأكد|هنتأكد|هنراجع|هراجع|هنشوف الموضوع|المسؤول|الإدارة|الاداره|الادارة|خدمة العملاء|فريق|get back to you|check with|forward (this|it)|our team|management)/i;
+
+const SOONISH = /(قريب|حال[اً]|بعدين|أول ما|اول ما|لاحق|later|soon|shortly)/i;
+
+export function stripEscalationPromises(reply: string): string {
+  const raw = String(reply ?? "");
+  if (!raw.trim()) return "";
+  const kept = splitSentences(raw).filter(
+    (s) => !(ESCALATION.test(s) && (SOONISH.test(s) || /هنرجع|هرجع|هحول|المسؤول|فريق|الإدار|الاchar/i.test(s))),
+  );
+  return kept.join("").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
