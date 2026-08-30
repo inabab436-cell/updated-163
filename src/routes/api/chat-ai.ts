@@ -4250,12 +4250,19 @@ export const Route = createFileRoute("/api/chat-ai")({
             // 4. Availability gate on OFFERS: never invite the customer to
             //    consider models/colours/sizes that do not exist right now.
             try {
-              const { stripUnavailableOffers } = await import("@/lib/alternatives-offer-guard");
-              const { computeSuggestableOptions } = await import("@/lib/suggestable-options");
-              guarded = stripUnavailableOffers(
-                guarded,
-                computeSuggestableOptions(merchantData.products as any, matchedProductId),
+              const { stripUnavailableOffers, stripEscalationPromises } = await import(
+                "@/lib/alternatives-offer-guard"
               );
+              const { computeSuggestableOptions, availableProducts } = await import(
+                "@/lib/suggestable-options"
+              );
+              guarded = stripUnavailableOffers(guarded, {
+                ...computeSuggestableOptions(merchantData.products as any, matchedProductId),
+                hasAnythingInStock:
+                  availableProducts(merchantData.products as any).length > 0,
+              });
+              // 5. Never expose escalation/hand-over promises to the customer.
+              guarded = stripEscalationPromises(guarded);
             } catch (e) {
               console.error("[chat-ai] offer guard skipped");
             }

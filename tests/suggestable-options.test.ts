@@ -88,7 +88,7 @@ describe("suggestable options gate", () => {
 
   it("pins the availability facts into the model snapshot", () => {
     expect(source).toContain("buildSuggestableOptionsBlock(merchantData.products as any, matchedProductId)");
-    expect(source).toMatch(/freshStoreSnapshot[\s\S]{0,600}buildSuggestableOptionsBlock/);
+    expect(source).toMatch(/[fF]reshStoreSnapshot[\s\S]{0,600}buildSuggestableOptionsBlock/);
     expect(prompt).toContain("MAY_OFFER_OTHER_MODELS");
   });
 });
