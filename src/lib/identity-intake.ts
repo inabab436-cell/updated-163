@@ -38,6 +38,17 @@ export interface IdentityCandidates {
   name?: string | null;
   phone?: string | null;
   address?: string | null;
+  /**
+   * Whether the customer is actually building an order right now.
+   *
+   * A name given socially at the start of the chat ("أنا أحمد") is NOT order
+   * data: it only tells the agent who it is talking to. Validating it as an
+   * order field made the agent demand a full two-part name and then continue
+   * into phone/address collection, as if an order had started. So the NAME
+   * check runs only while an order is genuinely in progress. Phone and address
+   * are never volunteered socially, so they keep being checked on arrival.
+   */
+  orderInProgress?: boolean;
 }
 
 const ADDRESS_PART_LABEL: Record<string, string> = {
@@ -129,7 +140,7 @@ export function checkIdentityIntake(candidates: IdentityCandidates): IdentityIss
   const issues: IdentityIssue[] = [];
 
   const name = String(candidates.name ?? "").trim();
-  if (name) {
+  if (name && candidates.orderInProgress) {
     const check = validateCustomerName(name);
     if (!check.ok) {
       issues.push({ field: "name", reason: check.reason ?? "invalid", ask: nameAsk(check.reason ?? "") });
