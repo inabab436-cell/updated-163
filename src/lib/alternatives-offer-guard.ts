@@ -38,7 +38,15 @@ function splitSentences(text: string): string[] {
     .filter((s) => s.length > 0);
 }
 
+/** "let me show you what we have / the collection / what's available". */
+const SHOW_AVAILABLE =
+  /(المتاح|المتوفر|الموجود|اللي عندنا|الكوليكشن|الكتالوج|المعروض|what we have|available|collection)/i;
+
 function isForbiddenOffer(sentence: string, perms: OfferPermissions): boolean {
+  // Nothing at all is in stock: any invitation to browse/see what exists is
+  // an empty promise, even without the word "another".
+  if (perms.hasAnythingInStock === false && OFFERING.test(sentence) && SHOW_AVAILABLE.test(sentence))
+    return true;
   if (!OTHER.test(sentence)) return false;
   if (!OFFERING.test(sentence)) return false;
   if (!perms.canOfferOtherModels && MODEL_WORDS.test(sentence)) return true;
