@@ -83,7 +83,7 @@ export function stripEscalationPromises(reply: string): string {
   const raw = String(reply ?? "");
   if (!raw.trim()) return "";
   const kept = splitSentences(raw).filter(
-    (s) => !(ESCALATION.test(s) && (SOONISH.test(s) || /هنرجع|هرجع|هحول|المسؤول|فريق|الإدار|الاchar/i.test(s))),
+    (s) => !(ESCALATION.test(s) && (SOONISH.test(s) || /هنرجع|هرجع|هحول|المسؤول|فريق|الإدار|الادار/i.test(s))),
   );
   return kept.join("").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
