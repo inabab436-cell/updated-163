@@ -1552,10 +1552,20 @@ export const Route = createFileRoute("/api/chat-ai")({
               const effectivePhone =
                 confirmedPhone ?? turnPhone?.phone ?? turnProfile.phone ?? customer.phone;
 
+              // A name given socially in the greeting is not order data, so
+              // the name check only runs while an order is really being built.
+              const storedStateForIdentity = await storedOrderStatePromise;
+              const orderInProgress =
+                storedStateForIdentity.order_placed ||
+                (["product_name", "color", "size", "quantity", "payment_method", "address", "phone"] as const).some(
+                  (f) => Boolean(storedStateForIdentity.fields[f]?.value),
+                );
+
               const identityIssues = checkIdentityIntake({
                 name: turnProfile.name ?? customer.name,
                 phone: effectivePhone,
                 address: turnProfile.address ?? customer.address,
+                orderInProgress,
               });
               return {
                 turnProfile,
